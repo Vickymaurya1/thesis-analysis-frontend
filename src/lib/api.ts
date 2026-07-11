@@ -100,9 +100,9 @@ export const api = {
 
   // Specific Tool triggers
   triggerQualityReview: (id: string) => request(`/theses/${id}/quality-review/trigger`, { method: "POST" }),
-  triggerPlagiarismReview: (id: string) => request(`/theses/${id}/plagiarism-review/trigger`, { method: "POST" }),
-  triggerNoveltyReview: (id: string) => request(`/theses/${id}/novelty-review/trigger`, { method: "POST" }),
-  triggerLiteratureReview: (id: string) => request(`/theses/${id}/literature-review/trigger`, { method: "POST" }),
+  triggerPlagiarismReview: (id: string) => request(`/theses/${id}/plagiarism/trigger`, { method: "POST" }),
+  triggerNoveltyReview: (id: string) => request(`/theses/${id}/novelty/trigger`, { method: "POST" }),
+  triggerLiteratureReview: (id: string) => request(`/theses/${id}/literature-review/draft`, { method: "POST" }),
   triggerReviewerReport: (id: string) => request(`/theses/${id}/reviewer-sim/report`, { method: "POST" }),
 
   // Flag Resolution
@@ -111,7 +111,10 @@ export const api = {
 
   // Reviewer Simulation practice viva
   createReviewerSimSession: (thesisId: string) => 
-    request(`/theses/${thesisId}/reviewer-sim/session`, { method: "POST" }),
+    request(`/theses/${thesisId}/reviewer-sim/session`, { 
+      method: "POST",
+      body: JSON.stringify({ mode: "student_practice" }),
+    }),
   sendReviewerSimMessage: (thesisId: string, sessionId: string, message: string) => 
     request(`/theses/${thesisId}/reviewer-sim/session/${sessionId}/message`, {
       method: "POST",
