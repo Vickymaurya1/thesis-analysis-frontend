@@ -33,6 +33,7 @@ export default function ThesisDetailsPage() {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false); // true while background pipeline runs
   
   // Viva practice chat state
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -125,13 +126,41 @@ export default function ThesisDetailsPage() {
       clearInterval(interval);
       setUploadProgress(100);
       
-      toast.success("Thesis version uploaded successfully and RAG triggers queued!");
+      toast.success("Thesis version uploaded successfully! Processing in background...");
       setUploadFile(null);
       setIsUploadOpen(false);
       
-      // Invalidate queries
+      // Invalidate queries to show new version
       queryClient.invalidateQueries({ queryKey: ["thesis", id] });
       setSelectedVersionId(null); // Force reset to latest
+
+      // Start polling: background pipeline runs asynchronously on the server.
+      // Poll dashboard every 4s for up to 90s until a quality score appears.
+      setIsProcessing(true);
+      let attempts = 0;
+      const maxAttempts = 22; // 22 x 4s = ~90s max
+      const pollInterval = setInterval(async () => {
+        attempts++;
+        try {
+          const dash = await api.getDashboard(id);
+          if ((dash?.overall_quality_score ?? 0) > 0) {
+            // Pipeline finished — refresh everything
+            clearInterval(pollInterval);
+            setIsProcessing(false);
+            queryClient.invalidateQueries({ queryKey: ["thesis", id] });
+            queryClient.invalidateQueries({ queryKey: ["dashboard", id, selectedVersionId] });
+            toast.success("Analysis complete! Quality score updated.");
+          } else if (attempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            setIsProcessing(false);
+            // Still refresh even on timeout
+            queryClient.invalidateQueries({ queryKey: ["dashboard", id, selectedVersionId] });
+            toast.info("Processing is taking longer than expected. Refresh the page in a moment.");
+          }
+        } catch {
+          // Silently ignore poll errors
+        }
+      }, 4000);
     } catch (err: any) {
       toast.error(`Upload failed: ${err.message}`);
     } finally {
@@ -354,6 +383,17 @@ export default function ThesisDetailsPage() {
 
         {/* -------------------- TAB CONTENT: OVERVIEW -------------------- */}
         <TabsContent value="overview" className="flex-1 p-6 space-y-6 max-w-6xl mx-auto w-full">
+
+          {/* Processing banner shown while background pipeline runs */}
+          {isProcessing && (
+            <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-md px-4 py-3">
+              <div className="h-4 w-4 rounded-full border-2 border-amber-500 border-t-transparent animate-spin" />
+              <span className="font-mono text-xs text-amber-800 uppercase tracking-wider">
+                Background analysis running — quality score will update automatically when complete...
+              </span>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
             {/* Radial score gauge */}
@@ -390,26 +430,30 @@ export default function ThesisDetailsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {dashboard?.sections && dashboard.sections.length > 0 ? (
-                  dashboard.sections.map((section: any, idx: number) => (
-                    <div key={idx} className="flex items-center justify-between border-b border-border/30 pb-2">
+                {dashboard?.sections && Object.keys(dashboard.sections).length > 0 ? (
+                  Object.entries(dashboard.sections).map(([secName, secData]: [string, any]) => (
+                    <div key={secName} className="flex items-center justify-between border-b border-border/30 pb-2">
                       <div className="flex items-center gap-2">
-                        {section.status === "ok" ? (
+                        {secData.status === "ok" ? (
                           <CheckCircle2 className="h-4 w-4 text-severity-ok" />
-                        ) : section.status === "warning" ? (
+                        ) : secData.status === "warning" ? (
                           <AlertTriangle className="h-4 w-4 text-severity-moderate" />
                         ) : (
                           <AlertTriangle className="h-4 w-4 text-severity-critical" />
                         )}
-                        <span className="font-serif text-xs font-medium text-foreground">{section.title}</span>
+                        <span className="font-serif text-xs font-medium text-foreground capitalize">
+                          {secName.replace("_", " ")}
+                        </span>
                       </div>
                       <span className="font-mono text-[10px] text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-sm">
-                        SCORE: {section.score}
+                        SCORE: {secData.score}
                       </span>
                     </div>
                   ))
                 ) : (
-                  <p className="text-xs text-muted-foreground italic font-mono">No sections detected or evaluated yet.</p>
+                  <p className="text-xs text-muted-foreground italic font-mono">
+                    {isProcessing ? "Evaluating sections..." : "No sections detected or evaluated yet."}
+                  </p>
                 )}
               </CardContent>
             </Card>
