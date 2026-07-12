@@ -104,6 +104,7 @@ export const api = {
   triggerNoveltyReview: (id: string) => request(`/theses/${id}/novelty/trigger`, { method: "POST" }),
   triggerLiteratureReview: (id: string) => request(`/theses/${id}/literature-review/draft`, { method: "POST" }),
   triggerReviewerReport: (id: string) => request(`/theses/${id}/reviewer-sim/report`, { method: "POST" }),
+  triggerCitationVerification: (id: string) => request(`/theses/${id}/citations/trigger`, { method: "POST" }),
 
   // Flag Resolution
   resolveFlag: (thesisId: string, flagId: string, resolve: boolean) => 

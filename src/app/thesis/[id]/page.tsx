@@ -77,6 +77,7 @@ export default function ThesisDetailsPage() {
       if (tool === "novelty_detection") return api.triggerNoveltyReview(id);
       if (tool === "literature_review") return api.triggerLiteratureReview(id);
       if (tool === "reviewer_simulation") return api.triggerReviewerReport(id);
+      if (tool === "citation_verification") return api.triggerCitationVerification(id);
       throw new Error(`Unknown review tool: ${tool}`);
     },
     onSuccess: (_, variables) => {
