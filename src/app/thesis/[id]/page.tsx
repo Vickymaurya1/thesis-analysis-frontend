@@ -471,24 +471,42 @@ export default function ThesisDetailsPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {thesis.versions?.map((v: any, index: number) => (
-                <div key={v.id} className="flex items-start gap-4 border-l-2 border-border pl-4 pb-2 relative">
-                  <div className="absolute -left-1.5 top-1.5 h-3 w-3 bg-[#FAF9F6] border-2 border-primary rounded-full"></div>
-                  <div>
-                    <span className="font-mono text-xs font-semibold text-foreground">
-                      Version v{v.version_number}
-                    </span>
-                    <span className="font-mono text-[10px] text-muted-foreground block">
-                      Uploaded at: {new Date(v.created_at).toLocaleString()}
-                    </span>
-                    {v.id === thesis.current_version_id && (
-                      <span className="font-mono text-[9px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 mt-1 inline-block uppercase rounded-sm">
-                        Active current version
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
+              {thesis.versions && thesis.versions.length > 0 ? (
+                thesis.versions.map((v: any) => {
+                  // Extract just the filename from the full file_ref path
+                  const fileName = v.file_ref
+                    ? v.file_ref.split(/[\\/]/).pop()
+                    : `version_${v.version_number}.pdf`;
+                  return (
+                    <div key={v.id} className="flex items-start gap-4 border-l-2 border-border pl-4 pb-2 relative">
+                      <div className="absolute -left-1.5 top-1.5 h-3 w-3 bg-[#FAF9F6] border-2 border-primary rounded-full"></div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-semibold text-foreground">
+                            Version v{v.version_number}
+                          </span>
+                          {v.id === thesis.current_version_id && (
+                            <span className="font-mono text-[9px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 inline-block uppercase rounded-sm">
+                              Active
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <FileText className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                          <span className="font-mono text-[10px] text-foreground truncate max-w-xs">
+                            {fileName}
+                          </span>
+                        </div>
+                        <span className="font-mono text-[10px] text-muted-foreground block mt-0.5">
+                          Uploaded: {v.uploaded_at ? new Date(v.uploaded_at).toLocaleString() : "—"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-xs text-muted-foreground italic font-mono">No versions uploaded yet.</p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
