@@ -4,6 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { formatLocalDateTime } from "@/lib/dateUtils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Bell, BellOff, ShieldAlert, AlertTriangle, CheckCircle2 } from "lucide-react";
@@ -67,7 +68,7 @@ export default function NotificationsPage() {
                         {notif.severity} notification
                       </span>
                       <span className="font-mono text-[9px] text-muted-foreground">
-                        {new Date(notif.created_at).toLocaleString()}
+                        {formatLocalDateTime(notif.created_at)}
                       </span>
                     </div>
                     <p className="font-sans text-xs text-foreground leading-relaxed">

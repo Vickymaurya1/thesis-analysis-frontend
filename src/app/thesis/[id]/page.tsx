@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { formatLocalDateTime } from "@/lib/dateUtils";
 import { FlagCard } from "@/components/flag-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -504,7 +505,7 @@ export default function ThesisDetailsPage() {
                           </span>
                         </div>
                         <span className="font-mono text-[10px] text-muted-foreground block mt-0.5">
-                          Uploaded: {v.uploaded_at ? new Date(v.uploaded_at).toLocaleString() : "—"}
+                          Uploaded: {formatLocalDateTime(v.uploaded_at)}
                         </span>
                       </div>
                     </div>
