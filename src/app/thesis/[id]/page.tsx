@@ -135,7 +135,7 @@ export default function ThesisDetailsPage() {
       setSelectedVersionId(null); // Force reset to latest
 
       // Start polling: background pipeline runs asynchronously on the server.
-      // Poll dashboard every 4s for up to 90s until a quality score appears.
+      // Poll dashboard every 4s for up to 90s until sections or a quality score appears.
       setIsProcessing(true);
       let attempts = 0;
       const maxAttempts = 22; // 22 x 4s = ~90s max
@@ -143,24 +143,30 @@ export default function ThesisDetailsPage() {
         attempts++;
         try {
           const dash = await api.getDashboard(id);
-          if ((dash?.overall_quality_score ?? 0) > 0) {
+          const hasScore = (dash?.overall_quality_score ?? 0) > 0;
+          const hasSections = dash?.sections && Object.keys(dash.sections).some(
+            k => (dash.sections[k]?.score ?? 0) > 0
+          );
+
+          if (hasScore || hasSections) {
             // Pipeline finished — refresh everything
             clearInterval(pollInterval);
             setIsProcessing(false);
             queryClient.invalidateQueries({ queryKey: ["thesis", id] });
             queryClient.invalidateQueries({ queryKey: ["dashboard", id, selectedVersionId] });
-            toast.success("Analysis complete! Quality score updated.");
+            toast.success("✅ Analysis complete! Quality score updated.");
           } else if (attempts >= maxAttempts) {
             clearInterval(pollInterval);
             setIsProcessing(false);
-            // Still refresh even on timeout
             queryClient.invalidateQueries({ queryKey: ["dashboard", id, selectedVersionId] });
-            toast.info("Processing is taking longer than expected. Refresh the page in a moment.");
+            queryClient.invalidateQueries({ queryKey: ["thesis", id] });
+            toast.info("Analysis still running. Check back in a moment or manually refresh.");
           }
         } catch {
           // Silently ignore poll errors
         }
       }, 4000);
+
     } catch (err: any) {
       toast.error(`Upload failed: ${err.message}`);
     } finally {
